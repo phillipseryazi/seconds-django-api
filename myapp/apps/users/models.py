@@ -4,6 +4,10 @@ from django.contrib.auth.models import (
     AbstractBaseUser,
     PermissionsMixin)
 
+from datetime import datetime, timedelta
+import os
+import jwt
+
 
 class UserManager(BaseUserManager):
     def create_user(self, username, email, password=None):
@@ -41,3 +45,16 @@ class User(AbstractBaseUser, PermissionsMixin):
     objects = UserManager()
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username']
+
+
+    @property
+    def token(self):
+        return self._generate_jwt_token()
+
+    def _generate_jwt_token(self):
+        dt = datetime.now() + timedelta(days=60)
+        token = jwt.encode({
+            'id': self.pk,
+            'exp': int(dt.strftime('%s'))
+        }, os.environ['APP_SECRET'], algorithm='HS256')
+        return token
